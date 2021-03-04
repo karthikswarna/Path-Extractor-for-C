@@ -6,10 +6,8 @@ from extract_paths import *
 from shutil import copy, rmtree
 
 def generate_dataset(params):
-    in_path, startIndex, endIndex, token_count, path_count, i, ilock, count_lock = params
+    in_path, startIndex, endIndex, token_count, path_count, token_dict, path_dict, i, ilock, count_lock = params
     maxPathContexts = 500
-    token_dict = {}
-    path_dict = {}
 
     try:
         # Create temporary working directories.
@@ -66,9 +64,5 @@ def generate_dataset(params):
         print("Keyboard Interrupt at %i'th file." %i)
         
     finally:
-        # Store the path dictionary and token dictionary in files.
-        store_tokens_paths(token_dict, path_dict)
-
         # Remove the temporary directory created by me.
-        # os.remove("cpg.bin")
         rmtree(workingDir)
