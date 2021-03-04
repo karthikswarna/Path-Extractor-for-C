@@ -2,7 +2,7 @@ import networkx as nx
 from utils import *
 import os
 
-def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50):
+def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50, splitToken=False, separator='|'):
     if not os.path.exists(os.path.join(ast_path, "0-ast.dot")):
         return ("", [])
 
@@ -12,7 +12,7 @@ def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50):
 
     nx.set_node_attributes(ast, [], 'pathPieces')
     postOrder = list(nx.dfs_postorder_nodes(ast, source="1000101"))
-    normalizeAst(ast, postOrder)
+    normalizeAst(ast, postOrder, splitToken, separator)
     paths = []
     
     for currentNode in postOrder:
@@ -42,13 +42,13 @@ def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50):
                             if ((maxLength == None) or (len(upPiece) + 1 + len(downPiece) <= maxLength)):
                                 paths.append(toPathContext(ast, upPiece, currentNode, downPiece))
 
-#     for start_node, edge_list in ast.adj.items():
-#         print(start_node, ast.nodes[start_node])
-#         print()
+    # for start_node, edge_list in ast.adj.items():
+    #     print(start_node, ast.nodes[start_node])
+    #     print()
         
-#     print('\n')
-#     for path in paths:
-#         print(path)
+    # print('\n')
+    # for path in paths:
+    #     print(path)
         
     return (ast.name, paths)
 
@@ -61,9 +61,9 @@ def extract_cfg_paths(cfg_path):
     Visited = []
     paths = traverse_paths(cfg, '1000101', paths.copy(), Visited.copy())
 
-#     print('\n')
-#     for path in paths:
-#         print(path)
+    # print('\n')
+    # for path in paths:
+    #     print(path)
         
     return paths
 

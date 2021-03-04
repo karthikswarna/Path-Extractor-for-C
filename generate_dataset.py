@@ -6,8 +6,8 @@ from extract_paths import *
 from shutil import copy, rmtree
 
 def generate_dataset(params):
-    in_path, startIndex, endIndex, token_count, path_count, token_dict, path_dict, i, ilock, count_lock = params
-    maxPathContexts = 500
+    in_path, startIndex, endIndex, token_count, path_count, token_dict, path_dict, i, ilock, count_lock, \
+    maxPathContexts, maxLength, maxWidth, maxTreeSize, splitToken, separator = params
 
     try:
         # Create temporary working directories.
@@ -34,8 +34,8 @@ def generate_dataset(params):
             os.chdir("..")
 
             # Extract paths from AST, CFG, PDG.
-            label, ast_paths = extract_ast_paths(os.path.relpath(workingDir + "\\outdir\\ast"))
-            print(len(ast_paths ))
+            label, ast_paths = extract_ast_paths(os.path.relpath(workingDir + "\\outdir\\ast"), maxLength, maxWidth, maxTreeSize, splitToken, separator)
+
             # If no paths are generated, Reset and continue. 
             if not ast_paths:
                 os.remove(os.path.join(workingDir + "\\workspace", file))

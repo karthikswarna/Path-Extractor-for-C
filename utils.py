@@ -43,6 +43,7 @@ def splitToSubtokens(token):
     
     return normalizedTokens
 
+
 def toPathContext(ast, upPiece, topNode, downPiece):
     # Creating upPath (list of type labels) from upPiece (list of ids) 
     upPath = []
