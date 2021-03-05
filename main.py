@@ -7,7 +7,7 @@ from store_paths import *
 from generate_dataset import *
 
 if __name__ == '__main__':
-    # If the ooutput files already exist, don't continue the execution.
+    # If the output files already exist, don't continue the execution.
     if os.path.isfile("config.txt") or os.path.isfile("token_ids.txt") or os.path.isfile("path_ids.txt"):
         print("config.txt or token_ids.txt or path_ids.txt files already exist. Exiting..")
         sys.exit()
