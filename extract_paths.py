@@ -59,15 +59,15 @@ def extract_cfg_paths(cfg_path):
     cfg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cfg_path, "0-cfg.dot")))
     paths = []
     Visited = []
-    paths = traverse_paths(cfg, '1000101', paths.copy(), Visited.copy())
+    paths = traverse_cfg_paths(cfg, '1000101', paths.copy(), Visited.copy())
 
-    # print('\n')
+    # print('\ncfg:')
     # for path in paths:
     #     print(path)
         
     return paths
 
-def traverse_paths(cfg, node, path, Visited):
+def traverse_cfg_paths(cfg, node, path, Visited):
     attributes = cfg.nodes[node]['label'][2:-2].split(',')
     attributes = [attr.strip() for attr in attributes]
     if path:
@@ -82,7 +82,7 @@ def traverse_paths(cfg, node, path, Visited):
     if children:
         for child in children:
             if child not in Visited:
-                child_paths += traverse_paths(cfg, child, path.copy(), Visited.copy())
+                child_paths += traverse_cfg_paths(cfg, child, path.copy(), Visited.copy())
             else:
                 attributes = cfg.nodes[child]['label'][2:-2].split(',')
                 attributes = [attr.strip() for attr in attributes]
@@ -92,5 +92,89 @@ def traverse_paths(cfg, node, path, Visited):
 
     return child_paths
 
-def extract_pdg_paths(pdg_path):
-    return None
+def extract_cdg_paths(cdg_path):
+    if not os.path.exists(os.path.join(cdg_path, "0-cdg.dot")):
+        return []
+
+    cdg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cdg_path, "0-cdg.dot")))
+    if nx.is_empty(cdg):
+        return []
+
+    # Removing self-loops and finding the root of the CDG (which is a tree, if self-loops are removed).
+    cdg.remove_edges_from(nx.selfloop_edges(cdg))
+    root = [node for node, degree in cdg.in_degree() if degree == 0]
+    paths = []
+    paths = traverse_cdg_paths(cdg, root[0], paths)
+
+    # print("\ncdg:")
+    # for path in paths:
+    #     print(path)
+        
+    return paths
+
+def traverse_cdg_paths(cdg, node, path, start_token = ""):
+    attributes = cdg.nodes[node]['label'][2:-2].split(',')
+    attributes = [attr.strip() for attr in attributes]
+    if path:
+        path.append('↓' + attributes[0])
+    else:
+        path.append(attributes[0])
+        start_token = attributes[1]
+
+    children = list(cdg.successors(node))
+    child_paths = []
+
+    if children:
+        for child in children:
+            if child != node:
+                child_paths += traverse_cdg_paths(cdg, child, path.copy(), start_token)
+    else:
+        return [(normalizeToken(start_token), ''.join(path), normalizeToken(attributes[1]))]
+
+    return child_paths
+
+def extract_ddg_paths(ddg_path):
+    if not os.path.exists(os.path.join(ddg_path, "0-ddg.dot")):
+        return []
+
+    ddg = nx.MultiDiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(ddg_path, "0-ddg.dot")))
+
+    paths = []
+    Visited = []
+    paths = traverse_ddg_paths(ddg, '1000101', paths.copy(), Visited.copy(), "")
+    paths = list(set([path for path in paths]))
+
+    # print('\nddg:')
+    # for path in paths:
+    #     print(path)
+        
+    return paths
+
+def traverse_ddg_paths(ddg, node, path, Visited, edge_label=""):
+    attributes = ddg.nodes[node]['label'][2:-2].split(',')
+    attributes = [attr.strip() for attr in attributes]
+    if path:
+        path.append('↓' + attributes[0])
+    else:
+        path.append(attributes[0])
+
+    Visited.append(node)
+    edges = ddg.edges(node, data='label')
+    child_paths = []
+
+    if edges:
+        for edge in edges:
+            if edge_label == "" or edge_label == None or edge_label in edge[2] or edge[2] in edge_label:
+                if edge[1] not in Visited:
+                    if edge_label == "" or edge_label == None or edge[2] in edge_label:
+                        child_paths += traverse_ddg_paths(ddg, edge[1], path.copy(), Visited.copy(), edge[2])
+                    elif edge_label in edge[2]:
+                        child_paths += traverse_ddg_paths(ddg, edge[1], path.copy(), Visited.copy(), edge_label)
+                else:
+                    attributes = ddg.nodes[edge[1]]['label'][2:-2].split(',')
+                    attributes = [attr.strip() for attr in attributes]
+                    child_paths.append(  (normalizeToken(path[0]), ''.join(path + ['↑' + attributes[0]]), normalizeToken(attributes[0]))  )
+    else:
+        return [(normalizeToken(path[0]), ''.join(path), normalizeToken(path[-1]))]
+
+    return child_paths

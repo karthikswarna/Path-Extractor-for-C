@@ -11,7 +11,7 @@ def generate_dataset(params):
 
     try:
         # Create temporary working directories.
-        workingDir = "_temp_dir_" + str(os.getpid())
+        workingDir = os.path.abspath("_temp_dir_" + str(os.getpid()))
         if not os.path.exists(os.path.join(workingDir, "workspace")):
             os.makedirs(os.path.join(workingDir, "workspace"))
 
@@ -30,10 +30,11 @@ def generate_dataset(params):
             os.system(os.path.join("..", "joern-cli", "bin", "joern-parse") + " workspace")
             os.system(os.path.join("..", "joern-cli", "bin", "joern-export") + " --repr ast --out " + os.path.join("outdir", "ast"))
             os.system(os.path.join("..", "joern-cli", "bin", "joern-export") + " --repr cfg --out " + os.path.join("outdir", "cfg"))
-            os.system(os.path.join("..", "joern-cli", "bin", "joern-export") + " --repr pdg --out " + os.path.join("outdir", "pdg"))
+            os.system(os.path.join("..", "joern-cli", "bin", "joern-export") + " --repr cdg --out " + os.path.join("outdir", "cdg"))
+            os.system(os.path.join("..", "joern-cli", "bin", "joern-export") + " --repr ddg --out " + os.path.join("outdir", "ddg"))
             os.chdir("..")
 
-            # Extract paths from AST, CFG, PDG.
+            # Extract paths from AST, CFG, DDG, CDG.
             label, ast_paths = extract_ast_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ast")), maxLength, maxWidth, maxTreeSize, splitToken, separator)
 
             # If no paths are generated, Reset and continue. 
@@ -48,10 +49,11 @@ def generate_dataset(params):
                 random.sample(ast_paths, maxPathContexts)
 
             cfg_paths = extract_cfg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cfg")))
-            pdg_paths = extract_pdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "pdg")))
+            cdg_paths = extract_cdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cdg")))
+            ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")))
 
             # Storing the extracted paths in files.
-            token_count, path_count = store_paths(normalizeToken(label), ast_paths, cfg_paths, pdg_paths, token_count, path_count, token_dict, path_dict, i, count_lock)
+            token_count, path_count = store_paths(normalizeToken(label), ast_paths, cfg_paths, cdg_paths, ddg_paths, token_count, path_count, token_dict, path_dict, i, count_lock)
             with ilock:
                 i.value += 1
 
@@ -61,8 +63,8 @@ def generate_dataset(params):
                 rmtree(os.path.join(workingDir, "outdir", folder))
 
     except KeyboardInterrupt:
-        print("Keyboard Interrupt at %i'th file." %i)
-        
+        print("Keyboard Interrupt at %i'th file." %i.value)
+
     finally:
         # Remove the temporary directory created by me.
         rmtree(workingDir)

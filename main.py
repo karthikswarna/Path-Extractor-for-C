@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
     # Divide the work between processes.
     totalFiles = len(os.listdir(in_path))
-    filesPerProcess = math.floor(totalFiles / 8)
-    leftOver = totalFiles % 8
+    filesPerProcess = math.floor(totalFiles / numOfProcesses)
+    leftOver = totalFiles % numOfProcesses
 
     # Calculate the start and end file indices for each process.
     processFileIndices = []
