@@ -25,7 +25,8 @@ if __name__ == '__main__':
     splitToken = config['pathExtractor'].getboolean('splitToken')
 
     # Divide the work between processes.
-    totalFiles = len(os.listdir(in_path))
+    # totalFiles = len(os.listdir(in_path))
+    totalFiles = 15000
     filesPerProcess = math.floor(totalFiles / numOfProcesses)
     leftOver = totalFiles % numOfProcesses
 

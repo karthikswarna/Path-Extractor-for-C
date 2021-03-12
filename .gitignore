@@ -1,5 +1,7 @@
 .ipynb_checkpoints
 __pycache__
+Dataset
+processedDataset*
 *.c
 *.txt
 *.ipynb
