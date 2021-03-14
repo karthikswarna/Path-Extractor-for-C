@@ -95,20 +95,23 @@ def extract_cdg_paths(cdg_path):
     cdg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cdg_path, "0-cdg.dot")))
     if nx.is_empty(cdg):
         return []
-
+    
     # Removing self-loops and finding the root of the CDG (which is a tree, if self-loops are removed).
-    cdg.remove_edges_from(nx.selfloop_edges(cdg))
-    root = [node for node, degree in cdg.in_degree() if degree == 0]
+    # cdg.remove_edges_from(nx.selfloop_edges(cdg))
+    # root = [node for node, degree in cdg.in_degree() if degree == 0]
+    root = min(cdg.nodes)
     paths = []
-    paths = traverse_cdg_paths(cdg, root[0], paths)
+    Visited = []
+    print(root)
+    paths = traverse_cdg_paths(cdg, root, paths, Visited)
 
     # print("\ncdg:")
     # for path in paths:
     #     print(path)
-        
+
     return paths
 
-def traverse_cdg_paths(cdg, node, path, start_token = ""):
+def traverse_cdg_paths(cdg, node, path, Visited, start_token = ""):
     attributes = cdg.nodes[node]['label'][2:-2].split(',')
     attributes = [attr.strip() for attr in attributes]
     if path:
@@ -117,13 +120,18 @@ def traverse_cdg_paths(cdg, node, path, start_token = ""):
         path.append(attributes[0])
         start_token = attributes[1]
 
+    Visited.append(node)
     children = list(cdg.successors(node))
     child_paths = []
 
     if children:
         for child in children:
-            if child != node:
-                child_paths += traverse_cdg_paths(cdg, child, path.copy(), start_token)
+            if child not in Visited:
+                child_paths += traverse_cdg_paths(cdg, child, path.copy(), Visited.copy(), start_token)
+            else:
+                attributes = cdg.nodes[child]['label'][2:-2].split(',')
+                attributes = [attr.strip() for attr in attributes]
+                child_paths.append(  (normalizeToken(start_token), ''.join(path + ['↑' + attributes[0]]), normalizeToken(attributes[1]))  )
     else:
         return [(normalizeToken(start_token), ''.join(path), normalizeToken(attributes[1]))]
 
