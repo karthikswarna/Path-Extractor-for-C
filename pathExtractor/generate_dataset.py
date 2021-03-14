@@ -7,7 +7,7 @@ from shutil import copy, rmtree
 
 def generate_dataset(params):
     in_path, startIndex, endIndex, token_count, path_count, token_dict, path_dict, i, ilock, count_lock, \
-    maxPathContexts, maxLength, maxWidth, maxTreeSize, splitToken, separator = params
+    maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator = params
 
     # try:
     # Create temporary working directories.
@@ -23,6 +23,12 @@ def generate_dataset(params):
         # Create environment for joern.
         file = str(fileIndex) + ".c"
         in_file_path = os.path.join(in_path, file)
+
+        # Filter files as per the max size requirement.
+        statinfo = os.stat(in_file_path)
+        if statinfo.st_size > maxFileSize:
+            continue
+
         copy(in_file_path, os.path.join(workingDir, "workspace"))
 
         # Use joern to create AST, CFG, PDG.

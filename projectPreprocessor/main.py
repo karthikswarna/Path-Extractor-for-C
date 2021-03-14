@@ -1,5 +1,7 @@
 import os
+import glob
 import configparser
+from shutil import rmtree
 from process_files import *
 
 if __name__ == '__main__':
@@ -8,13 +10,14 @@ if __name__ == '__main__':
     config.read(os.path.join("..", "config.ini"))
     in_path = config['projectPreprocessor']['inPath']
     out_path = config['projectPreprocessor']['outPath']
+    maxFileSize = config['projectPreprocessor'].getint('maxFileSize')
 
     intermediate_path = os.path.join(in_path, "_temp_file_dir_")
     os.mkdir(intermediate_path)
 
     try:    
         filter_files(in_path, intermediate_path)
-        split_files_into_functions(intermediate_path, out_path)
+        split_files_into_functions(intermediate_path, out_path, maxFileSize)
 
     except Exception as e:
         raise Exception(e)

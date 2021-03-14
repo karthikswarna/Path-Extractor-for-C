@@ -11,10 +11,13 @@ def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50, splitTo
         return ("", [])
 
     nx.set_node_attributes(ast, [], 'pathPieces')
-    postOrder = list(nx.dfs_postorder_nodes(ast, source="1000101"))
+
+    source = "1000101" if "1000101" in ast else min(ast.nodes)
+    postOrder = list(nx.dfs_postorder_nodes(ast, source=source))
+
     normalizeAst(ast, postOrder, splitToken, separator)
-    paths = []
-    
+
+    paths = []    
     for currentNode in postOrder:
         if not list(ast.successors(currentNode)):    # List is empty i.e node is leaf
             attributes = ast.nodes[currentNode]['label'][2:-2].split(',')
@@ -55,7 +58,8 @@ def extract_cfg_paths(cfg_path):
     cfg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cfg_path, "0-cfg.dot")))
     paths = []
     Visited = []
-    paths = traverse_cfg_paths(cfg, '1000101', paths.copy(), Visited.copy())
+    source = "1000101" if "1000101" in cfg else min(cfg.nodes)
+    paths = traverse_cfg_paths(cfg, source, paths.copy(), Visited.copy())
 
     # print('\ncfg:')
     # for path in paths:
@@ -102,7 +106,6 @@ def extract_cdg_paths(cdg_path):
     root = min(cdg.nodes)
     paths = []
     Visited = []
-    print(root)
     paths = traverse_cdg_paths(cdg, root, paths, Visited)
 
     # print("\ncdg:")
@@ -145,7 +148,8 @@ def extract_ddg_paths(ddg_path):
 
     paths = []
     Visited = []
-    paths = traverse_ddg_paths(ddg, '1000101', paths.copy(), Visited.copy(), "")
+    source = "1000101" if "1000101" in ddg else min(ddg.nodes)
+    paths = traverse_ddg_paths(ddg, source, paths.copy(), Visited.copy(), "")
     paths = list(set([path for path in paths]))
 
     # print('\nddg:')

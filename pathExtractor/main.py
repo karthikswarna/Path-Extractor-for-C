@@ -21,6 +21,7 @@ if __name__ == '__main__':
     maxLength = config['pathExtractor'].getint('maxLength')
     maxWidth = config['pathExtractor'].getint('maxWidth')
     maxTreeSize = config['pathExtractor'].getint('maxTreeSize')
+    maxFileSize = config['pathExtractor'].getint('maxFileSize')
     separator = config['pathExtractor']['separator']
     splitToken = config['pathExtractor'].getboolean('splitToken')
 
@@ -52,7 +53,7 @@ if __name__ == '__main__':
         
         # Create the argument collection, where each element contains the array of parameters for each process.
         ProcessArguments = ([in_path] + FileIndices + [token_count, path_count, token_dict, path_dict, i, ilock, count_lock] \
-                            + [maxPathContexts, maxLength, maxWidth, maxTreeSize, splitToken, separator] for FileIndices in processFileIndices)
+                            + [maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator] for FileIndices in processFileIndices)
         
         # Start executing multiple processes.
         with mp.Pool(processes = numOfProcesses) as pool:

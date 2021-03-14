@@ -1,7 +1,6 @@
-import glob
-import codecs
-import os, re
-from shutil import copy, rmtree
+import os
+import sys
+from shutil import copy
 from utils import extract_functions_from_file, preprocess_cfile
 
 # Filter the C/C++ source files and copy to the Dataset folder.
@@ -27,7 +26,7 @@ def filter_files(in_path, out_path):
                     copy(in_file_path, out_file_path)
 
 # Splits all the files in in_path directory to functions and outputs them in out_path folder.
-def split_files_into_functions(in_path, out_path):
+def split_files_into_functions(in_path, out_path, maxFileSize):
     os.makedirs(out_path, exist_ok=True)
     i = 0
     for root, dirs, files in os.walk(in_path):
@@ -39,6 +38,11 @@ def split_files_into_functions(in_path, out_path):
             
             for function in functions:
                 # print(i, in_file_path)
+        
+                # Filter files as per the max size requirement.
+                if sys.getsizeof(function) > maxFileSize:
+                    continue
+
                 with open(os.path.join(out_path, str(i) + ".c"), "w", encoding='utf-8') as file:
                     file.write(function)
                 i += 1
