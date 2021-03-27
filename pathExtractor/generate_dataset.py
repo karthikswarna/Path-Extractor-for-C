@@ -60,7 +60,6 @@ def generate_dataset(params):
         ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")))
 
         # Storing the extracted paths in files.
-        # token_count, path_count = store_paths(label, ast_paths, cfg_paths, cdg_paths, ddg_paths, i)
         store_paths(label, file_name, ast_paths, cfg_paths, cdg_paths, ddg_paths, i)
         with ilock:
             i.value += 1
