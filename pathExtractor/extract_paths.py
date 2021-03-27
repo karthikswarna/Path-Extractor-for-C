@@ -3,10 +3,11 @@ from utils import *
 import os
 
 def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50, splitToken=False, separator='|'):
-    if not os.path.exists(os.path.join(ast_path, "0-ast.dot")):
+    try:
+        ast = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(ast_path, "0-ast.dot")))
+    except:
         return ("", [])
 
-    ast = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(ast_path, "0-ast.dot")))
     if (ast.number_of_nodes() > maxTreeSize):
         return ("", [])
 
@@ -52,10 +53,11 @@ def extract_ast_paths(ast_path, maxLength=8, maxWidth=3, maxTreeSize=50, splitTo
     return (ast.name, paths)
 
 def extract_cfg_paths(cfg_path):
-    if not os.path.exists(os.path.join(cfg_path, "0-cfg.dot")):
+    try:
+        cfg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cfg_path, "0-cfg.dot")))
+    except:
         return []
 
-    cfg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cfg_path, "0-cfg.dot")))
     paths = []
     Visited = []
     source = "1000101" if "1000101" in cfg else min(cfg.nodes)
@@ -93,10 +95,11 @@ def traverse_cfg_paths(cfg, node, path, Visited):
     return child_paths
 
 def extract_cdg_paths(cdg_path):
-    if not os.path.exists(os.path.join(cdg_path, "0-cdg.dot")):
+    try:
+        cdg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cdg_path, "0-cdg.dot")))
+    except:
         return []
 
-    cdg = nx.DiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(cdg_path, "0-cdg.dot")))
     if nx.is_empty(cdg):
         return []
     
@@ -141,10 +144,10 @@ def traverse_cdg_paths(cdg, node, path, Visited, start_token = ""):
     return child_paths
 
 def extract_ddg_paths(ddg_path):
-    if not os.path.exists(os.path.join(ddg_path, "0-ddg.dot")):
+    try:
+        ddg = nx.MultiDiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(ddg_path, "0-ddg.dot")))
+    except:
         return []
-
-    ddg = nx.MultiDiGraph(nx.drawing.nx_pydot.read_dot(os.path.join(ddg_path, "0-ddg.dot")))
 
     paths = []
     Visited = []

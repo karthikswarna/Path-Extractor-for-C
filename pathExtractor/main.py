@@ -41,18 +41,18 @@ if __name__ == '__main__':
 
     with mp.Manager() as manager:
         # Create shared dictionaries, count variables, and locks.
-        token_count = manager.Value('i', 1)
-        path_count = manager.Value('i', 1)
-        token_dict = manager.dict()
-        path_dict = manager.dict()
-        token_dict["<PAD/>"] = 0
-        path_dict["<PAD/>"] = 0
+        # token_count = manager.Value('i', 1)
+        # path_count = manager.Value('i', 1)
+        # token_dict = manager.dict()
+        # path_dict = manager.dict()
+        # token_dict["<PAD/>"] = 0
+        # path_dict["<PAD/>"] = 0
         i = manager.Value('i', 0)
         ilock = manager.Lock()
-        count_lock = manager.Lock()
+        # count_lock = manager.Lock()
         
         # Create the argument collection, where each element contains the array of parameters for each process.
-        ProcessArguments = ([in_path] + FileIndices + [token_count, path_count, token_dict, path_dict, i, ilock, count_lock] \
+        ProcessArguments = ([in_path] + FileIndices + [i, ilock] \
                             + [maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator] for FileIndices in processFileIndices)
         
         # Start executing multiple processes.
@@ -60,7 +60,7 @@ if __name__ == '__main__':
             pool.map(generate_dataset, ProcessArguments)
         
         # Store the path dictionary and token dictionary in files.
-        store_tokens_paths(token_dict, path_dict)
+        # store_tokens_paths(token_dict, path_dict)
 
-        print("Token count : ", token_count.value)
-        print("Path count : ", path_count.value)
+        # print("Token count : ", token_count.value)
+        # print("Path count : ", path_count.value)

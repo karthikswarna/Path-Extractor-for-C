@@ -10,6 +10,7 @@ if __name__ == '__main__':
     config.read(os.path.join("..", "config.ini"))
     in_path = config['projectPreprocessor']['inPath']
     out_path = config['projectPreprocessor']['outPath']
+    outputType = config['projectPreprocessor']['outputType']
     maxFileSize = config['projectPreprocessor'].getint('maxFileSize')
 
     intermediate_path = os.path.join(in_path, "_temp_file_dir_")
@@ -17,7 +18,11 @@ if __name__ == '__main__':
 
     try:    
         filter_files(in_path, intermediate_path)
-        split_files_into_functions(intermediate_path, out_path, maxFileSize)
+
+        if outputType == "multiple":
+            split_files_into_functions_multiple(intermediate_path, out_path, maxFileSize)
+        elif outputType == "single":
+            split_files_into_functions_single(intermediate_path, out_path, maxFileSize)
 
     except Exception as e:
         raise Exception(e)
