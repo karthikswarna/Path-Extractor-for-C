@@ -20,7 +20,7 @@ def preprocess_cfile(filepath):
         f1.close()
     
     # Preprocessing using gcc (removes comments, and resolves preprocessor directives other than #include)
-    os.system("gcc -E _temp_%s > _temp_code.cpp" %filename)
+    os.system("g++ -E _temp_%s > _temp_code.cpp" %filename)
     
     # Remove all lines that start with # from the preprocessed code
     with codecs.open("_temp_code.cpp", 'r', encoding='utf-8', errors='ignore') as f:
@@ -39,8 +39,8 @@ def preprocess_cfile(filepath):
 
 def extract_functions_from_file(code):
     # G1 - regex, G2 - static or const, G3 - return type, G4 - Function name, G5 - Argument list, G6 - const keyword
-    rproc = r"((static|const)?\s+(\w+(?:\s*[*&]?\s+|\s+[*&]?\s*))(\w+)\s*\(([\w\s,<>\[\].=&':/*]*?)\)\s*(const)?\s*(?={))"
-    cppwords = ['if', 'while', 'do', 'for', 'switch', 'else']
+    rproc = r"((static|const)?\s+(\w+(?:\s*[*&]?\s+|\s+[*&]?\s*))(?:\w+::)?(\w+)\s*\(([\w\s,<>\[\].=&':/*]*?)\)\s*(const)?\s*(?={))"
+    cppwords = ['if', 'while', 'do', 'for', 'switch', 'else', 'case', 'IF', 'WHILE', 'DO', 'FOR', 'SWITCH', 'ELSE', 'CASE']
 
     functions = []
     for match in re.finditer(rproc, code, re.DOTALL):
@@ -79,7 +79,14 @@ def extract_functions_from_file(code):
                     
             body = code[start_index : end_index + 1].strip()
             if body != '':
-                function = match.group(1) + body
+                header = (match.group(2).strip() + ' ' if match.group(2) is not None else '') + \
+                        (match.group(3).strip() + ' ' if match.group(3) is not None else '') + \
+                        (match.group(4).strip() + ' ' if match.group(4) is not None else '') + \
+                        ('(' + match.group(5).strip() + ') ' if match.group(5) is not None else '') + \
+                        (match.group(6).strip() + ' ' if match.group(6) is not None else '') + '\n'
+            
+                # function = match.group(1) + body
+                function = header + body        # This is done not to include the class name in function header (For C++ functions).
                 functions.append(function)
 
     return functions

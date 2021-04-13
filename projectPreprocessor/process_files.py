@@ -11,18 +11,19 @@ def filter_files(in_path, out_path):
     for dir in projectDirs:
         for root, dirs, files in os.walk(os.path.join(in_path, dir)):
             for file in files:
-                if file.endswith(".cc") or file.endswith(".cxx") or file.endswith(".cpp") or file.endswith(".c"):
+                if file.endswith(".cpp")  or file.endswith(".CPP")  or file.endswith(".c++") or file.endswith(".cp")  or file.endswith(".cxx") or \
+                file.endswith(".hpp") or file.endswith(".HPP") or file.endswith(".c") or file.endswith(".h") or file.endswith(".C") or file.endswith(".cc"):
                     in_file_path = os.path.join(root, file)                    
 
                     # Replicate the same folder structure in out_path.
                     # C:\Users\karthik chandra\Downloads\Dataset\C\borg-master\scripts\fuzz-cache-sync\main.c
-                    out_file_path = os.path.join(out_path, in_file_path.replace(in_path, ""))
+                    out_file_path = os.path.join(out_path, in_file_path.replace(in_path, "")[1:])
                     os.makedirs(os.path.dirname(out_file_path), exist_ok=True)
 
                     # Get the path without the file name in the end. (For example, without \main.c in the above path.)
                     # C:\Users\karthik chandra\Downloads\Dataset\C\borg-master\scripts\fuzz-cache-sync
                     out_file_path = os.path.dirname(os.path.abspath(out_file_path))
-                    
+
                     copy(in_file_path, out_file_path)
 
 # Splits all the files in in_path directory to functions and outputs them in out_path folder repository wise (each repository has saperate folder).
