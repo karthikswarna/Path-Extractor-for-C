@@ -6,6 +6,10 @@ def create_output_files(filepath):
     token_dict["<PAD/>"] = 0
     path_dict["<PAD/>"] = 0
 
+    startToken = ''
+    path = ''
+    endToken = ''
+    flag = 0
     with open("corpus.txt", 'a', encoding="utf-8") as fout:
         with open(filepath, 'r', encoding="utf-8") as f:
             for line in f:
@@ -23,12 +27,27 @@ def create_output_files(filepath):
 
                 else:
                     pathContext = line.split('\t')
-                    if len(pathContext) != 3:
-                        continue
 
-                    startToken = pathContext[0].strip()
-                    path = pathContext[1].strip()
-                    endToken = pathContext[2].strip()
+                    if len(pathContext) == 2:
+                        if flag == 0:
+                            startToken = pathContext[0].strip()
+                            path = pathContext[1].strip()
+                            flag = 1
+                            continue
+                        elif flag == 1:
+                            path = path + pathContext[0].replace('\\n', '').strip()
+                            endToken = pathContext[1].strip()
+                            print(startToken, path, endToken)
+                            print()
+                            flag = 0
+
+                    elif len(pathContext) == 3:
+                        startToken = pathContext[0].strip()
+                        path = pathContext[1].strip()
+                        endToken = pathContext[2].strip()
+
+                    else:
+                        continue
 
                     if startToken not in token_dict:
                         token_dict[startToken] = token_count
@@ -53,4 +72,4 @@ def create_output_files(filepath):
             f.write(str(token_id) + '\t' + token + '\n')
 
 
-create_output_files("C:\\Users\\karthik chandra\\Desktop\\CS\\Research Work\\c2cpg\\corpus_netdata.txt")
+create_output_files("C:\\Users\\karthik chandra\\Desktop\\CS\\Research Work\\c2cpg\\corpus10K.txt")

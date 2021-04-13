@@ -16,6 +16,7 @@ def normalizeAst(ast, postOrder, splitToken=False, separator='|'):
         attributes[1] = normalizedToken
         ast.nodes[currentNode]['label'] = '"(' + ",".join(attributes) + ')"'
 
+    return separator.join(splitToSubtokens(ast.name))
 
 def normalizeToken(token, defaultToken = ""):
     cleanToken = token.lower()
@@ -44,7 +45,7 @@ def splitToSubtokens(token):
     return normalizedTokens
 
 
-def toPathContext(ast, upPiece, topNode, downPiece):
+def toPathContext(ast, upPiece, topNode, downPiece, upSymbol='↑', downSymbol='↓', useParentheses=True):
     # Creating upPath (list of type labels) from upPiece (list of ids) 
     upPath = []
     for index, currentNode in enumerate(upPiece):
@@ -72,8 +73,13 @@ def toPathContext(ast, upPiece, topNode, downPiece):
     topNode = attributes[0]
     
     # Creating pathContext from the path using (upPath, topNode, downPath). Also, adds arrows to store in file.
-    upOrientedPath = ''.join([node + '↑' for node in upPath])
-    downOrientedPath = ''.join(['↓' + node for node in downPath[::-1]])
-    orientedPath = upOrientedPath + topNode + downOrientedPath
-    
+    if useParentheses:
+        upOrientedPath = ''.join(['(' + node + ')' + upSymbol for node in upPath])
+        downOrientedPath = ''.join([downSymbol + '(' + node + ')' for node in downPath[::-1]])
+        orientedPath = upOrientedPath + '(' + topNode + ')' + downOrientedPath
+    else:
+        upOrientedPath = ''.join([node + upSymbol for node in upPath])
+        downOrientedPath = ''.join([downSymbol + node for node in downPath[::-1]])
+        orientedPath = upOrientedPath + topNode + downOrientedPath
+
     return (startToken, orientedPath, endToken)

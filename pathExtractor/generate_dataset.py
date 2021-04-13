@@ -6,10 +6,9 @@ from extract_paths import *
 from shutil import copy, rmtree
 
 def generate_dataset(params):
-    in_path, startIndex, endIndex, i, ilock, \
-    maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator = params
+    in_path, startIndex, endIndex, checkpointSet, i, ilock, \
+    maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator, upSymbol, downSymbol, useParentheses = params
 
-    # try:
     # Create temporary working directories.
     workingDir = os.path.abspath("_temp_dir_" + str(os.getpid()))
     if not os.path.exists(os.path.join(workingDir, "workspace")):
@@ -20,9 +19,17 @@ def generate_dataset(params):
 
     # Process each file in the dataset one-by-one.
     for fileIndex in range(startIndex, endIndex + 1):
+        # If it is already extracted, continue.
+        if fileIndex in checkpointSet:
+            continue
+
         # Create environment for joern.
         file_name = str(fileIndex) + ".c"
         in_file_path = os.path.join(in_path, file_name)
+
+        # If the file is not in dataset, continue.
+        if not os.path.isfile(in_file_path):
+            continue
 
         # Filter files as per the max size requirement.
         statinfo = os.stat(in_file_path)
@@ -41,8 +48,7 @@ def generate_dataset(params):
         os.chdir("..")
 
         # Extract paths from AST, CFG, DDG, CDG.
-        label, ast_paths = extract_ast_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ast")), maxLength, maxWidth, maxTreeSize, splitToken, separator)
-        label = normalizeToken(label)
+        label, ast_paths = extract_ast_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ast")), maxLength, maxWidth, maxTreeSize, splitToken, separator, upSymbol, downSymbol, useParentheses)
 
         # If no paths are generated, Reset and continue. 
         if not ast_paths or label == None or label == "":
@@ -53,11 +59,17 @@ def generate_dataset(params):
         
         # Select maxPathContexts number of path contexts randomly.
         if len(ast_paths) > maxPathContexts:
-            random.sample(ast_paths, maxPathContexts)
+            ast_paths = random.sample(ast_paths, maxPathContexts)
 
-        cfg_paths = extract_cfg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cfg")))
-        cdg_paths = extract_cdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cdg")))
-        ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")))
+        cfg_paths = extract_cfg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cfg")), upSymbol, downSymbol, useParentheses)
+        cdg_paths = extract_cdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cdg")), upSymbol, downSymbol, useParentheses)
+        ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")), upSymbol, downSymbol, useParentheses)
+
+        # If CDG, DDG paths are empty, then add a dummy path
+        # if not cdg_paths:
+        #     cdg_paths.append(("<NULL/>", "<NULL/>", "<NULL/>"))
+        # if not ddg_paths:
+        #     ddg_paths.append(("<NULL/>", "<NULL/>", "<NULL/>"))
 
         # Storing the extracted paths in files.
         store_paths(label, file_name, ast_paths, cfg_paths, cdg_paths, ddg_paths, i)
@@ -70,10 +82,3 @@ def generate_dataset(params):
             rmtree(os.path.join(workingDir, "outdir", folder))
 
     rmtree(workingDir)
-
-    # except KeyboardInterrupt:
-    #     print("Keyboard Interrupt at %i'th file." %i.value)
-
-    # finally:
-        # Remove the temporary directory created by me.
-        # rmtree(workingDir)
