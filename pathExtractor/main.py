@@ -29,6 +29,7 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(os.path.join("..", "config.ini"))
     in_path = config['pathExtractor']['inputPath']
+    datasetName = config['pathExtractor']['datasetName']
     numOfProcesses = config['pathExtractor'].getint('numOfProcesses')
     maxPathContexts = config['pathExtractor'].getint('maxPathContexts')
     maxLength = config['pathExtractor'].getint('maxLength')
@@ -39,6 +40,7 @@ if __name__ == '__main__':
     splitToken = config['pathExtractor'].getboolean('splitToken')
     upSymbol = config['pathExtractor']['upSymbol']
     downSymbol = config['pathExtractor']['downSymbol']
+    labelPlaceholder = config['pathExtractor']['labelPlaceholder']
     useParentheses = config['pathExtractor'].getboolean('useParentheses')
     useCheckpoint = config['pathExtractor'].getboolean('useCheckpoint')
 
@@ -74,8 +76,8 @@ if __name__ == '__main__':
         ilock = manager.Lock()
 
         # Create the argument collection, where each element contains the array of parameters for each process.
-        ProcessArguments = ([in_path] + FileIndices + [checkpointDict[processIndex]] + [i, ilock] \
-                            + [maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator, upSymbol, downSymbol, useParentheses] for processIndex, FileIndices in enumerate(processFileIndices))
+        ProcessArguments = ([in_path, datasetName] + FileIndices + [checkpointDict[processIndex]] + [i, ilock] \
+                            + [maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses] for processIndex, FileIndices in enumerate(processFileIndices))
 
         # Start executing multiple processes.
         with mp.Pool(processes = numOfProcesses) as pool:

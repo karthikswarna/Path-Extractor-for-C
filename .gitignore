@@ -5,3 +5,4 @@ processedDataset*
 *.c
 *.txt
 *.ipynb
+*.json

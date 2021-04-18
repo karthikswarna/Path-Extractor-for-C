@@ -1,22 +1,12 @@
 import re
 
-def normalizeAst(ast, postOrder, splitToken=False, separator='|'):
+def normalizeAst(ast, postOrder, splitToken=False, separator='|', labelPlaceholder='<SELF>', useParentheses=True):
+    label = separator.join(splitToSubtokens(ast.name))
+
     for currentNode in postOrder:
-        attributes = ast.nodes[currentNode]['label'][2:-2].split(',')
-        attributes = [attr.strip() for attr in attributes]
+        attributes = normalizeNode(ast, currentNode, splitToken, separator, labelPlaceholder, useParentheses)
 
-        if len(attributes) <= 1:
-            continue
-
-        if splitToken:
-            normalizedToken = separator.join(splitToSubtokens(attributes[1]))
-        else:
-            normalizedToken = normalizeToken(attributes[1])
-            
-        attributes[1] = normalizedToken
-        ast.nodes[currentNode]['label'] = '"(' + ",".join(attributes) + ')"'
-
-    return separator.join(splitToSubtokens(ast.name))
+    return label
 
 def normalizeToken(token, defaultToken = ""):
     cleanToken = token.lower()
@@ -35,6 +25,33 @@ def normalizeToken(token, defaultToken = ""):
 
     return stripped
 
+def normalizeNode(graph, node, splitToken=False, separator='|', labelPlaceholder='<SELF>', useParentheses=True):
+    attributes = graph.nodes[node]['label'][2:-2].split(',')
+    attributes = [attr.strip() for attr in attributes]
+
+    if len(attributes) > 1:
+        # Remove the method label from the tree
+        if attributes[0] == 'METHOD' and attributes[1] == graph.name:   # Main method definition node.
+            attributes[1] = labelPlaceholder
+
+        elif attributes[0] == graph.name:                               # Recursive call to itself.
+            attributes[0] = labelPlaceholder
+            attributes[1] = labelPlaceholder
+        
+        # Normalize the type label
+        if useParentheses and not (attributes[0][0] == '(' and attributes[0][-1] == ')'):
+            attributes[0] = '(' + attributes[0] + ')'
+
+        # Normalize the token
+        if splitToken:
+            attributes[1] = separator.join(splitToSubtokens(attributes[1]))
+        else:
+            attributes[1] = normalizeToken(attributes[1])
+
+        graph.nodes[node]['label'] = '"(' + ",".join(attributes) + ')"'
+    
+    return attributes
+
 
 def splitToSubtokens(token):
     token = token.strip()
@@ -45,7 +62,7 @@ def splitToSubtokens(token):
     return normalizedTokens
 
 
-def toPathContext(ast, upPiece, topNode, downPiece, upSymbol='↑', downSymbol='↓', useParentheses=True):
+def toPathContext(ast, upPiece, topNode, downPiece, upSymbol='↑', downSymbol='↓'):
     # Creating upPath (list of type labels) from upPiece (list of ids) 
     upPath = []
     for index, currentNode in enumerate(upPiece):
@@ -73,13 +90,8 @@ def toPathContext(ast, upPiece, topNode, downPiece, upSymbol='↑', downSymbol='
     topNode = attributes[0]
     
     # Creating pathContext from the path using (upPath, topNode, downPath). Also, adds arrows to store in file.
-    if useParentheses:
-        upOrientedPath = ''.join(['(' + node + ')' + upSymbol for node in upPath])
-        downOrientedPath = ''.join([downSymbol + '(' + node + ')' for node in downPath[::-1]])
-        orientedPath = upOrientedPath + '(' + topNode + ')' + downOrientedPath
-    else:
-        upOrientedPath = ''.join([node + upSymbol for node in upPath])
-        downOrientedPath = ''.join([downSymbol + node for node in downPath[::-1]])
-        orientedPath = upOrientedPath + topNode + downOrientedPath
+    upOrientedPath = ''.join([node + upSymbol for node in upPath])
+    downOrientedPath = ''.join([downSymbol + node for node in downPath[::-1]])
+    orientedPath = upOrientedPath + topNode + downOrientedPath
 
     return (startToken, orientedPath, endToken)

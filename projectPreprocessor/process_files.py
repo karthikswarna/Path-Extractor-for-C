@@ -24,7 +24,10 @@ def filter_files(in_path, out_path):
                     # C:\Users\karthik chandra\Downloads\Dataset\C\borg-master\scripts\fuzz-cache-sync
                     out_file_path = os.path.dirname(os.path.abspath(out_file_path))
 
-                    copy(in_file_path, out_file_path)
+                    try:
+                        copy(in_file_path, out_file_path)
+                    except OSError as e:
+                        continue
 
 # Splits all the files in in_path directory to functions and outputs them in out_path folder repository wise (each repository has saperate folder).
 def split_files_into_functions_multiple(in_path, out_path, maxFileSize):

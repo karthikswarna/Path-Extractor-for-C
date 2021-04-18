@@ -1,9 +1,9 @@
 import os
 from filelock import FileLock
 
-def store_paths(label, file_name, ast_paths, cfg_paths, cdg_paths, ddg_paths, i):
-    with FileLock(os.path.join("..", "corpus.txt.lock")):
-        with open(os.path.join("..", "corpus.txt"), 'a', encoding="utf-8") as f:
+def store_paths(label, file_name, datasetName, ast_paths, cfg_paths, cdg_paths, ddg_paths, i):
+    with FileLock(os.path.join("..", datasetName + ".c2v.lock")):
+        with open(os.path.join("..", datasetName + ".c2v"), 'a', encoding="utf-8") as f:
             f.write("#" + str(i.value) + '\n')
             f.write("label:" + label + '\n')
             f.write("file:" + file_name + '\n')

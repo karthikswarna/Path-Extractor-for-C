@@ -6,8 +6,8 @@ from extract_paths import *
 from shutil import copy, rmtree
 
 def generate_dataset(params):
-    in_path, startIndex, endIndex, checkpointSet, i, ilock, \
-    maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator, upSymbol, downSymbol, useParentheses = params
+    in_path, datasetName, startIndex, endIndex, checkpointSet, i, ilock, \
+    maxPathContexts, maxLength, maxWidth, maxTreeSize, maxFileSize, splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses = params
 
     # Create temporary working directories.
     workingDir = os.path.abspath("_temp_dir_" + str(os.getpid()))
@@ -48,7 +48,7 @@ def generate_dataset(params):
         os.chdir("..")
 
         # Extract paths from AST, CFG, DDG, CDG.
-        label, ast_paths = extract_ast_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ast")), maxLength, maxWidth, maxTreeSize, splitToken, separator, upSymbol, downSymbol, useParentheses)
+        label, ast_paths = extract_ast_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ast")), maxLength, maxWidth, maxTreeSize, splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
 
         # If no paths are generated, Reset and continue. 
         if not ast_paths or label == None or label == "":
@@ -61,9 +61,9 @@ def generate_dataset(params):
         if len(ast_paths) > maxPathContexts:
             ast_paths = random.sample(ast_paths, maxPathContexts)
 
-        cfg_paths = extract_cfg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cfg")), upSymbol, downSymbol, useParentheses)
-        cdg_paths = extract_cdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cdg")), upSymbol, downSymbol, useParentheses)
-        ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")), upSymbol, downSymbol, useParentheses)
+        cfg_paths = extract_cfg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cfg")), splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
+        cdg_paths = extract_cdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cdg")), splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
+        ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")), splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
 
         # If CDG, DDG paths are empty, then add a dummy path
         # if not cdg_paths:
@@ -72,7 +72,7 @@ def generate_dataset(params):
         #     ddg_paths.append(("<NULL/>", "<NULL/>", "<NULL/>"))
 
         # Storing the extracted paths in files.
-        store_paths(label, file_name, ast_paths, cfg_paths, cdg_paths, ddg_paths, i)
+        store_paths(label, file_name, datasetName, ast_paths, cfg_paths, cdg_paths, ddg_paths, i)
         with ilock:
             i.value += 1
 

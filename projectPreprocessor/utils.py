@@ -20,24 +20,29 @@ def preprocess_cfile(filepath):
         f1.close()
     
     # Preprocessing using gcc (removes comments, and resolves preprocessor directives other than #include)
-    os.system("g++ -E _temp_%s > _temp_code.cpp" %filename)
+    os.system("g++ -E _temp_%s > __temp_code__.cpp" %filename)
     
-    # Remove all lines that start with # from the preprocessed code
-    with codecs.open("_temp_code.cpp", 'r', encoding='utf-8', errors='ignore') as f:
-        for line in f:
-            if not re.search('^#', line):
-                preproc_code += line
-                
+    if os.path.isfile("__temp_code__.cpp"):
+        # Remove all lines that start with # from the preprocessed code
+        with codecs.open("__temp_code__.cpp", 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                if not re.search('^#', line):
+                    preproc_code += line
+    
+        os.remove("__temp_code__.cpp")
+    
+    os.remove("_temp_" + filename)
+
     # print(includes)
     # print(new_code)
     # print(preproc_code)
-    
-    os.remove("_temp_" + filename)
-    os.remove("_temp_code.cpp")
 
     return includes + preproc_code
 
 def extract_functions_from_file(code):
+    if code == "":
+        return []
+
     # G1 - regex, G2 - static or const, G3 - return type, G4 - Function name, G5 - Argument list, G6 - const keyword
     rproc = r"((static|const)?\s+(\w+(?:\s*[*&]?\s+|\s+[*&]?\s*))(?:\w+::)?(\w+)\s*\(([\w\s,<>\[\].=&':/*]*?)\)\s*(const)?\s*(?={))"
     cppwords = ['if', 'while', 'do', 'for', 'switch', 'else', 'case', 'IF', 'WHILE', 'DO', 'FOR', 'SWITCH', 'ELSE', 'CASE']
