@@ -6,3 +6,4 @@ processedDataset*
 *.txt
 *.ipynb
 *.json
+*.c2v
