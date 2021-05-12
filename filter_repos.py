@@ -67,10 +67,52 @@ if __name__ == '__main__':
     # clone_repos("repos.json", repoStartIndex=0, repoEndIndex=998)       # 0 Indexing
 
 
+
+    ####### Combine repos_c_stars.json repos_c_forks.json into repos_c.json 
+    # new_repos = []
+    # with open('repos_c_stars.json', 'r') as f:
+    #     with open('repos_c_forks.json', 'r') as f1:
+    #         repos_stars = json.load(f)
+    #         repos_forks = json.load(f1)
+
+    #         for repo in repos_stars:
+    #             curr_link = repo['link']
+
+    #             flag = False
+    #             for repo1 in new_repos:
+    #                 if repo1['link'] == curr_link:
+    #                     flag = True
+    #                     break
+    #                 else:
+    #                     continue
+                
+    #             if flag == False:
+    #                 new_repos.append(repo)
+
+    #         for repo in repos_forks:
+    #             curr_link = repo['link']
+
+    #             flag = False
+    #             for repo1 in new_repos:
+    #                 if repo1['link'] == curr_link:
+    #                     flag = True
+    #                     break
+    #                 else:
+    #                     continue
+                
+    #             if flag == False:
+    #                 new_repos.append(repo)
+        
+    # with open('repos_c.json', 'w') as f:
+    #     json.dump(new_repos, f, indent=4)
+
+
+
+
     ####### Find the difference between repos_c_stars.json and repos_c_forks.json.
     # extra_repos = []
-    # with open('repos_c_forks_mod.json', 'r') as f:
-    #     with open('repos.json', 'r') as f1:
+    # with open('repos_c_forks.json', 'r') as f:
+    #     with open('repos_c_stars.json', 'r') as f1:
     #         forks = json.load(f)
     #         stars = json.load(f1)
 
@@ -84,10 +126,11 @@ if __name__ == '__main__':
     #                 print(repo)
     #                 extra_repos.append(repo)
 
-            # print("Repos in stars, but not in forks: ")
-            # for repo in stars:
-            #     if repo not in forks_names:
-            #         print(repo)
+    #         print("Repos in stars, but not in forks: ")
+    #         for repo in stars:
+    #             if repo not in forks_names:
+    #                 print(repo)
+
 
 
     ####### Calculate z-scores, sort repos as per z-scores and rewrite file.
@@ -130,53 +173,31 @@ if __name__ == '__main__':
 
 
 
-    ####### Combine repos_c_stars.json repos_c_forks.json into repos_c.json 
-    # new_repos = []
-    # with open('repos_c_stars.json', 'r') as f:
-    #     with open('repos_c_forks.json', 'r') as f1:
-    #         repos_stars = json.load(f)
-    #         repos_forks = json.load(f1)
+    ####### From repos_count.json, inserting method counts for all repos into repos_c_mod.json
+    # with open('repos_c_mod.json', 'r') as f:
+    #     with open('repos_count.json', 'r') as f1:
+    #         repos = json.load(f)
+    #         repos_count = json.load(f1)
 
-    #         for repo in repos_stars:
-    #             curr_link = repo['link']
-
-    #             flag = False
-    #             for repo1 in new_repos:
-    #                 if repo1['link'] == curr_link:
-    #                     flag = True
-    #                     break
-    #                 else:
-    #                     continue
-                
-    #             if flag == False:
-    #                 new_repos.append(repo)
-
-    #         for repo in repos_forks:
-    #             curr_link = repo['link']
-
-    #             flag = False
-    #             for repo1 in new_repos:
-    #                 if repo1['link'] == curr_link:
-    #                     flag = True
-    #                     break
-    #                 else:
-    #                     continue
-                
-    #             if flag == False:
-    #                 new_repos.append(repo)
-        
-    # with open('repos_c.json', 'w') as f:
-    #     json.dump(new_repos, f, indent=4)
-
-    ####### Finding the new repos added to the new list
-    # with open('old_repos.json', 'r') as f:
-    #     with open('repos_c_mod.json', 'r') as f1:
-    #         old_repos = json.load(f)
-    #         repos = json.load(f1)
-
-    #         new_repos = {}
     #         for repo in repos:
-    #             if repo['link'] not in old_repos:
-    #                 new_repos[repo['name']] = repo['link']
+    #             if repo['name'] in repos_count:
+    #                 repo['method_count'] = repos_count[repo['name']]
+    #             else:
+    #                 repo['method_count'] = -1
 
-    #         print(new_repos)
+    #         with open('repos_c_mod2.json', 'w') as f2:
+    #             json.dump(repos, f2, indent=4)
+
+
+    # with open('repos_c_mod2.json', 'r') as f:
+    #     repos = json.load(f)
+
+    #     total_count = 0
+    #     for index, repo in enumerate(repos):
+    #         if repo['method_count'] > 25000:
+    #             total_count += repo['method_count']
+    #             print(repo['name'], repo['method_count'])
+
+    #         # if total_count > 1500000:
+    #         #     print(index, repo['name'])
+    #         #     break
