@@ -54,11 +54,11 @@ if __name__ == '__main__':
         checkpointDict[processIndex] = set()
 
     # If the output files already exist, either use it as a checkpoint or don't continue the execution.
-    if os.path.isfile(os.path.join("..", "corpus.txt")) or os.path.isfile(os.path.join("..", "token_idxs.txt")) or os.path.isfile(os.path.join("..", "path_idxs.txt")):
+    if os.path.isfile(os.path.join("..", datasetName + ".c2v")):
         if useCheckpoint:
-            print("corpus.txt file exists. Using it as a checkpoint ...")
+            print(datasetName + ".c2v file exists. Using it as a checkpoint ...")
             
-            with open(os.path.join("..", "corpus.txt"), 'r') as f:
+            with open(os.path.join("..", datasetName + ".c2v"), 'r') as f:
                 for line in f:
                     if line.startswith("file:"):
                         fileIndex = int(line.strip('file:.c\n\t '))
@@ -67,8 +67,10 @@ if __name__ == '__main__':
                                 checkpointDict[processIndex].add(fileIndex)
                                 initialCount += 1
                                 break
+            initialCount += 1
+
         else:
-            print("corpus.txt or token_idxs.txt or path_idxs.txt files already exist. Exiting..")
+            print(datasetName + ".c2v file already exist. Exiting ...")
             sys.exit()
 
     with mp.Manager() as manager:

@@ -56,14 +56,20 @@ def generate_dataset(params):
             for folder in os.listdir(os.path.join(workingDir, "outdir")):
                 rmtree(os.path.join(workingDir, "outdir", folder))
             continue
-        
-        # Select maxPathContexts number of path contexts randomly.
-        if len(ast_paths) > maxPathContexts:
-            ast_paths = random.sample(ast_paths, maxPathContexts)
 
         cfg_paths = extract_cfg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cfg")), splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
         cdg_paths = extract_cdg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "cdg")), splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
         ddg_paths = extract_ddg_paths(os.path.relpath(os.path.join(workingDir, "outdir", "ddg")), splitToken, separator, upSymbol, downSymbol, labelPlaceholder, useParentheses)
+
+        # Select maxPathContexts number of path contexts randomly.
+        if len(ast_paths) > maxPathContexts:
+            ast_paths = random.sample(ast_paths, maxPathContexts)
+        if len(cfg_paths) > maxPathContexts:
+            cfg_paths = random.sample(cfg_paths, maxPathContexts)
+        if len(cdg_paths) > maxPathContexts:
+            cdg_paths = random.sample(cdg_paths, maxPathContexts)
+        if len(ddg_paths) > maxPathContexts:
+            ddg_paths = random.sample(ddg_paths, maxPathContexts)
 
         # If CDG, DDG paths are empty, then add a dummy path
         # if not cdg_paths:
