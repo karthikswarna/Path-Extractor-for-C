@@ -1,4 +1,5 @@
 import pickle
+import os
 
 def java_string_hashcode(s):
         """
@@ -16,9 +17,9 @@ def update_freq_dict(freq_dict, word):
     else:
         freq_dict[word] = 1
 
-def save_dictionaries(dataset_name, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples):
+def save_dictionaries(destination_dir, dataset_name, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples):
     output_file_name = dataset_name + '.dict.c2v' 
-    with open(dataset_name + '.dict.c2v', 'wb') as f:
+    with open(os.path.join(destination_dir, output_file_name), 'wb') as f:
         pickle.dump(token_freq_dict, f)
         pickle.dump(path_freq_dict, f)
         pickle.dump(target_freq_dict, f)
@@ -28,9 +29,9 @@ def save_dictionaries(dataset_name, hash_to_string_dict, token_freq_dict, path_f
     #     for hashed_path, context_path in hash_to_string_dict.items():
     #         f.write(hashed_path + '\t' + context_path + '\n')
 
-    print('Dictionaries saved to: {}'.format(output_file_name))
+    print('Dictionaries saved to: {}'.format(os.path.join(destination_dir, output_file_name)))
 
-def create_output_files_code2vec(filepath, dataset_name, data_role, include_paths, max_paths, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict):
+def create_output_files_code2vec(filepath, destination_dir, dataset_name, data_role, include_paths, max_paths, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict):
     total_examples = 0      # Total Valid examples
     empty_examples = 0
     startToken = ''
@@ -45,7 +46,8 @@ def create_output_files_code2vec(filepath, dataset_name, data_role, include_path
     current_path_count = {'ast':0, 'cfg':0, 'cdg':0, 'ddg':0}
     current_counter = 'ast'
     
-    with open("{}.{}.c2v".format(dataset_name, data_role), 'a', encoding="utf-8") as fout:
+    os.makedirs(destination_dir, exist_ok=True)
+    with open(os.path.join(destination_dir, "{}.{}.c2v".format(dataset_name, data_role)), 'a', encoding="utf-8") as fout:
         with open(filepath, 'r', encoding="utf-8") as f:
             for line in f:
                 if line.startswith("label:"):
@@ -58,7 +60,7 @@ def create_output_files_code2vec(filepath, dataset_name, data_role, include_path
                                 total_examples += 1
               
                             total_path_count['ddg'] += current_path_count['ddg']
-                            path_count[current_counter] = 0
+                            current_path_count[current_counter] = 0
                         else:
                             fout.write(current_row)                    
                             total_examples += 1
@@ -95,7 +97,7 @@ def create_output_files_code2vec(filepath, dataset_name, data_role, include_path
                         current_row += (' ' * (max_paths[current_counter] - current_path_count[current_counter] - 1))
                         total_path_count[current_counter] += current_path_count[current_counter]
 
-                    path_count[current_counter] = 0
+                    current_path_count[current_counter] = 0
                     current_counter = line.lstrip('path: \n\t').rstrip(' \n\t')
                     if include_paths[current_counter]:
                         current_row += ' '      # \t or ' '
@@ -143,13 +145,13 @@ def create_output_files_code2vec(filepath, dataset_name, data_role, include_path
             if include_paths[current_counter]:
                 current_row += (' ' * (max_paths[current_counter] - current_path_count[current_counter] - 1))
                 total_path_count[current_counter] += current_path_count[current_counter]
-                path_count[current_counter] = 0
+                current_path_count[current_counter] = 0
 
             fout.write(current_row + '\n')
             total_examples += 1
 
     print('File: ' + filepath)
-    print('Total examples: ' + str(total_examples))
+    print('Valid examples: ' + str(total_examples))
     print('Invalid examples: ' + str(empty_examples))
     print('Average Path Count: ')
     for rep, count in total_path_count.items():
@@ -181,38 +183,53 @@ if __name__ == '__main__':
     # save_dictionaries(dataset_name, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
 
 
-    ## For normal Train-Test-Val split. (Dictionary is formed using all splits)
-    dataset_name = 'c'
-    num_training_examples = 0
-    train_data_path = "C:\\Users\\karthik chandra\\Desktop\\CS\\Research Work\\c2cpg\\processedDataset\\c_joined.c2v"
+    ## For normal Train-Test-Val split. (Target dict is formed using only training, path and token dicts are formed using all splits)
+    datasets = ["qmk_firmware", "FFmpeg", "openssl", "radare2", "esp-idf", "postgres", "rt-thread", "vlc", "qemu", "gcc", "zig", "kbengine", "poco", "sumatrapdf", "catboost", "fastsocket"]
+    for dataset_name in datasets:
+        num_training_examples = 0
+        destination_dir = os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg')
+        data_path = "/mnt/c/Users/karthik chandra/Desktop/CS/Research Work/c2cpg/processedDataset/" + dataset_name + ".c2v"
 
-    num_examples = create_output_files_code2vec(train_data_path, dataset_name, 'train', \
-                        {'ast':True, 'cfg':True, 'cdg':False, 'ddg':True}, {'ast':200, 'cfg':10, 'cdg':50, 'ddg':100}, \
-                        hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict)
-    
-    num_training_examples = round(num_examples * 0.89)
-    print("num_training_examples: ", num_training_examples)
-    save_dictionaries(dataset_name, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
+        num_examples = create_output_files_code2vec(data_path, destination_dir, dataset_name, 'full', \
+                            {'ast':False, 'cfg':True, 'cdg':True, 'ddg':True}, {'ast':200, 'cfg':10, 'cdg':50, 'ddg':100}, \
+                            hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict)
+        
+        num_training_examples = round(num_examples * 0.89)
+        print("num_training_examples: ", num_training_examples)
 
-    # Shuffle the output file of above step.
+        ## Shuffle the output file of above step.
+        os.system('./processedDataset/terashuf-master/terashuf < {destination_dir}/{dataset_name}.full.c2v > {destination_dir}/{dataset_name}.full.shuffled.c2v'.format(destination_dir=destination_dir, dataset_name=dataset_name))
 
-    # Splitting the joined and shuffled file into Train-Test-Val sets.
-    # train_count = round(num_examples * 0.89)
-    # val_count = round(num_examples * 0.035) + train_count
-    # test_count = round(num_examples * 0.075) + val_count
-    # print("Train Examples: ", train_count)
-    # print("Val Examples: ", val_count)
-    # print("Test Examples: ", test_count)
-    # line_count = 0
-    # with open('processedDataset\\c_ast_cfg_ddg\\c.train.c2v', 'w') as fo0:
-    #     with open('processedDataset\\c_ast_cfg_ddg\\c.val.c2v', 'w') as fo1:
-    #         with open('processedDataset\\c_ast_cfg_ddg\\c.test.c2v', 'w') as fo2:
-    #             with open('processedDataset\\c_full_shuffled.c2v', 'r', encoding="utf-8") as fin:
-    #                 for line in fin:
-    #                     line_count += 1
-    #                     if line_count <= train_count:
-    #                         fo0.write(line)
-    #                     elif line_count > train_count and line_count <= val_count:
-    #                         fo1.write(line)
-    #                     elif line_count > val_count and line_count <= test_count:
-    #                         fo2.write(line)
+        ## Splitting the joined and shuffled file into Train-Test-Val sets.
+        train_index = round(num_examples * 0.89)
+        val_index = round(num_examples * 0.035) + train_index
+        test_index = round(num_examples * 0.075) + val_index
+        print("Train Examples: ", train_index)
+        print("Val Examples: ", val_index - train_index)
+        print("Test Examples: ", test_index - val_index)
+        line_count = 0
+        with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.train.c2v'.format(dataset_name + '_cfg_cdg_ddg')), 'w') as fo0:
+            with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.val.c2v'.format(dataset_name + '_cfg_cdg_ddg')), 'w') as fo1:
+                with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.test.c2v'.format(dataset_name + '_cfg_cdg_ddg')), 'w') as fo2:
+                    with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.full.shuffled.c2v'.format(dataset_name)), 'r', encoding="utf-8") as fin:
+                        for line in fin:
+                            line_count += 1
+                            if line_count <= train_index:
+                                fo0.write(line)
+                            elif line_count > train_index and line_count <= val_index:
+                                fo1.write(line)
+                            elif line_count > val_index and line_count <= test_index:
+                                fo2.write(line)
+
+        ## Creating target dictionary using only Training data.
+        # with open(os.path.join('processedDataset', dataset_name, '{}.train.c2v'.format(dataset_name)), 'r') as file:
+        #     for line in file:
+        #         parts = line.rstrip('\n').split(' ')
+        #         target_name = parts[0]
+        #         contexts = parts[1:]
+
+        #         update_freq_dict(target_freq_dict, target_name)
+
+        save_dictionaries(destination_dir, dataset_name + '_cfg_cdg_ddg', hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
+        os.remove(os.path.join(destination_dir, dataset_name + '.full.c2v'))
+        os.remove(os.path.join(destination_dir, dataset_name + '.full.shuffled.c2v'))
