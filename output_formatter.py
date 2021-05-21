@@ -1,6 +1,8 @@
+import configparser
 import pickle
 import os
 
+# This function is taken from code2vec (https://github.com/tech-srl/code2vec/blob/master/extractor.py)
 def java_string_hashcode(s):
         """
         Imitating Java's String#hashCode, because the model is trained on hashed paths but we wish to
@@ -164,41 +166,43 @@ if __name__ == '__main__':
     token_freq_dict = {}
     path_freq_dict = {}
     target_freq_dict = {}
-    
-    ## For Cross-Project Evaluation
-    # dataset_name = 'c'
-    # num_training_examples = 0
-    # train_data_path = "C:\\Users\\karthik chandra\\Desktop\\CS\\Research Work\\c2cpg\\processedDataset\\c.train.c2v"
-    # test_data_path = "C:\\Users\\karthik chandra\\Desktop\\CS\\Research Work\\c2cpg\\processedDataset\\c.test.c2v"
-    # val_data_path = "C:\\Users\\karthik chandra\\Desktop\\CS\\Research Work\\c2cpg\\processedDataset\\c.val.c2v"
 
-    # for data_file_path, data_role in zip([test_data_path, val_data_path, train_data_path], ['test', 'val', 'train']):
-    #     num_examples = create_output_files_code2vec(data_file_path, dataset_name, data_role, \
-    #                         {'ast':True, 'cfg':False, 'cdg':False, 'ddg':False}, {'ast':200, 'cfg':10, 'cdg':50, 'ddg':100}, \
-    #                         hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict)
-        
-    #     if data_role == 'train':
-    #         num_training_examples = num_examples
+    include_paths = {'ast':False, 'cfg':False, 'cdg':False, 'ddg':False}
+    max_path_count = {'ast':0, 'cfg':0, 'cdg':0, 'ddg':0}
 
-    # save_dictionaries(dataset_name, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    input_dir = config['outputFormatter']['inputDirectory']
+    datasets = config['outputFormatter']['datasets']
+    datasets = [dataset.strip() for dataset in datasets.split(',')]
+    output_dir = config['outputFormatter']['outputDirectory']
+    dataset_name_ext = config['outputFormatter']['datasetNameExtension']
 
+    include_paths['ast'] = config['outputFormatter'].getboolean('includeASTPaths')
+    include_paths['cfg'] = config['outputFormatter'].getboolean('includeCFGPaths')
+    include_paths['cdg'] = config['outputFormatter'].getboolean('includeCDGPaths')
+    include_paths['ddg'] = config['outputFormatter'].getboolean('includeDDGPaths')
+
+    max_path_count['ast'] = config['outputFormatter'].getint('maxASTPaths')
+    max_path_count['cfg'] = config['outputFormatter'].getint('maxCFGPaths')
+    max_path_count['cdg'] = config['outputFormatter'].getint('maxCDGPaths')
+    max_path_count['ddg'] = config['outputFormatter'].getint('maxDDGPaths')
 
     ## For normal Train-Test-Val split. (Target dict is formed using only training, path and token dicts are formed using all splits)
-    datasets = ["qmk_firmware", "FFmpeg", "openssl", "radare2", "esp-idf", "postgres", "rt-thread", "vlc", "qemu", "gcc", "zig", "kbengine", "poco", "sumatrapdf", "catboost", "fastsocket"]
     for dataset_name in datasets:
         num_training_examples = 0
-        destination_dir = os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg')
-        data_path = "/mnt/c/Users/karthik chandra/Desktop/CS/Research Work/c2cpg/processedDataset/" + dataset_name + ".c2v"
+        destination_dir = os.path.join(output_dir, dataset_name, dataset_name_ext)
+        data_path = os.path.join(input_dir, dataset_name + ".c2v")
 
         num_examples = create_output_files_code2vec(data_path, destination_dir, dataset_name, 'full', \
-                            {'ast':False, 'cfg':True, 'cdg':True, 'ddg':True}, {'ast':200, 'cfg':10, 'cdg':50, 'ddg':100}, \
+                            include_paths, max_path_count, \
                             hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict)
         
         num_training_examples = round(num_examples * 0.89)
         print("num_training_examples: ", num_training_examples)
 
         ## Shuffle the output file of above step.
-        os.system('./processedDataset/terashuf-master/terashuf < {destination_dir}/{dataset_name}.full.c2v > {destination_dir}/{dataset_name}.full.shuffled.c2v'.format(destination_dir=destination_dir, dataset_name=dataset_name))
+        os.system('./terashuf < {destination_dir}/{dataset_name}.full.c2v > {destination_dir}/{dataset_name}.full.shuffled.c2v'.format(destination_dir=destination_dir, dataset_name=dataset_name))
 
         ## Splitting the joined and shuffled file into Train-Test-Val sets.
         train_index = round(num_examples * 0.89)
@@ -208,10 +212,10 @@ if __name__ == '__main__':
         print("Val Examples: ", val_index - train_index)
         print("Test Examples: ", test_index - val_index)
         line_count = 0
-        with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.train.c2v'.format(dataset_name + '_cfg_cdg_ddg')), 'w') as fo0:
-            with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.val.c2v'.format(dataset_name + '_cfg_cdg_ddg')), 'w') as fo1:
-                with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.test.c2v'.format(dataset_name + '_cfg_cdg_ddg')), 'w') as fo2:
-                    with open(os.path.join('processedDataset', dataset_name, 'cfg_cdg_ddg', '{}.full.shuffled.c2v'.format(dataset_name)), 'r', encoding="utf-8") as fin:
+        with open(os.path.join(destination_dir, '{}.train.c2v'.format(dataset_name + '_' + dataset_name_ext)), 'w') as fo0:
+            with open(os.path.join(destination_dir, '{}.val.c2v'.format(dataset_name + '_' + dataset_name_ext)), 'w') as fo1:
+                with open(os.path.join(destination_dir, '{}.test.c2v'.format(dataset_name + '_' + dataset_name_ext)), 'w') as fo2:
+                    with open(os.path.join(destination_dir, '{}.full.shuffled.c2v'.format(dataset_name)), 'r', encoding="utf-8") as fin:
                         for line in fin:
                             line_count += 1
                             if line_count <= train_index:
@@ -221,8 +225,8 @@ if __name__ == '__main__':
                             elif line_count > val_index and line_count <= test_index:
                                 fo2.write(line)
 
-        ## Creating target dictionary using only Training data.
-        # with open(os.path.join('processedDataset', dataset_name, '{}.train.c2v'.format(dataset_name)), 'r') as file:
+        # # Creating target dictionary using only Training data.
+        # with open(os.path.join('processedDataset', dataset_name, dataset_name_ext, '{}.train.c2v'.format(dataset_name + dataset_name_ext)), 'r') as file:
         #     for line in file:
         #         parts = line.rstrip('\n').split(' ')
         #         target_name = parts[0]
@@ -230,6 +234,6 @@ if __name__ == '__main__':
 
         #         update_freq_dict(target_freq_dict, target_name)
 
-        save_dictionaries(destination_dir, dataset_name + '_cfg_cdg_ddg', hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
+        save_dictionaries(destination_dir, dataset_name + '_' + dataset_name_ext, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
         os.remove(os.path.join(destination_dir, dataset_name + '.full.c2v'))
         os.remove(os.path.join(destination_dir, dataset_name + '.full.shuffled.c2v'))

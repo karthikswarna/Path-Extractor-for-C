@@ -8,22 +8,6 @@ def normalizeAst(ast, postOrder, splitToken=False, separator='|', labelPlacehold
 
     return label
 
-def normalizeToken(token, defaultToken = ""):
-    cleanToken = token.lower()
-    cleanToken = re.sub("\s+", "", cleanToken)       # escaped new line, whitespaces
-    cleanToken = re.sub("[\"',]", "", cleanToken)    # quotes, apostrophies, commas
-    cleanToken = re.sub("P{Print}", "", cleanToken)  # unicode weird characters
-
-    stripped = re.sub("[^A-Za-z]", "", cleanToken)
-
-    if not stripped:                                   # stripped is empty
-        carefulStripped = re.sub(" ", "_", cleanToken)
-        if not carefulStripped:                        # carefulStripped is empty
-            return defaultToken
-        else:
-            return carefulStripped
-
-    return stripped
 
 def normalizeNode(graph, node, splitToken=False, separator='|', labelPlaceholder='<SELF>', useParentheses=True):
     attributes = graph.nodes[node]['label'][2:-2].split(',')
@@ -53,6 +37,26 @@ def normalizeNode(graph, node, splitToken=False, separator='|', labelPlaceholder
     return attributes
 
 
+# This implementation is inspired by code2vec and astminer (https://github.com/JetBrains-Research/astminer).
+def normalizeToken(token, defaultToken = ""):
+    cleanToken = token.lower()
+    cleanToken = re.sub("\s+", "", cleanToken)       # escaped new line, whitespaces
+    cleanToken = re.sub("[\"',]", "", cleanToken)    # quotes, apostrophies, commas
+    cleanToken = re.sub("P{Print}", "", cleanToken)  # unicode weird characters
+
+    stripped = re.sub("[^A-Za-z]", "", cleanToken)
+
+    if not stripped:                                   # stripped is empty
+        carefulStripped = re.sub(" ", "_", cleanToken)
+        if not carefulStripped:                        # carefulStripped is empty
+            return defaultToken
+        else:
+            return carefulStripped
+
+    return stripped
+
+
+# This implementation is inspired by code2vec and astminer (https://github.com/JetBrains-Research/astminer).
 def splitToSubtokens(token):
     token = token.strip()
     tokens = re.compile("(?<=[a-z])(?=[A-Z])|_|[0-9]|(?<=[A-Z])(?=[A-Z][a-z])|\\s+").split(token)
