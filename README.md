@@ -114,3 +114,12 @@ python3 output_formatter.py
 ## **Similar tools that inspired our implementation**
 1. [astminer](https://github.com/JetBrains-Research/astminer)
 2. [code2vec's Java extractor](https://github.com/tech-srl/code2vec/tree/master/JavaExtractor)
+
+## **Team**
+In case of any queries or if you would like to give any suggestions, please feel free to contact:
+
+- Karthik Chandra (cs17b026@iittp.ac.in) 
+
+- Dheeraj Vagavolu (cs17b028@iittp.ac.in) 
+
+- Sridhar Chimalakonda (ch@iittp.ac.in)
