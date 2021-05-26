@@ -3,7 +3,7 @@
 ## **Introduction**
 * The idea of extracting paths from code to capture properties is inspired by [A general path-based representation for predicting program properties](https://doi.org/10.1145/3296979.3192412). We have extended the path-based representation to include CFG and PDG paths.
 
-* This tool is developed as part of mine and @dheerajrox's bachelor thesis.
+* This tool is developed as part of my and [Dheeraj's](https://github.com/dheerajrox) bachelor thesis.
 
 
 ## **Installing Dependencies**
