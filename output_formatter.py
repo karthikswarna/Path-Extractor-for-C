@@ -19,9 +19,26 @@ def update_freq_dict(freq_dict, word):
     else:
         freq_dict[word] = 1
 
-def save_dictionaries(destination_dir, dataset_name, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples):
-    output_file_name = dataset_name + '.dict.c2v' 
-    with open(os.path.join(destination_dir, output_file_name), 'wb') as f:
+def create_dictionaries(input_file, token_freq_dict, path_freq_dict, target_freq_dict):
+    with open(input_file, 'r', encoding='utf-8') as fin:
+        for line in fin:
+            fields = line.strip('\n').split(' ')
+
+            update_freq_dict(target_freq_dict, fields[0])
+
+            for path_context in fields[1:]:
+                if path_context != '':
+                    start_token, path, end_token = path_context.split(',')
+                    update_freq_dict(token_freq_dict, start_token)
+                    update_freq_dict(path_freq_dict, path)
+                    update_freq_dict(token_freq_dict, end_token)
+
+def save_dictionaries(output_file, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples):
+    if os.path.isfile(output_file):
+        print("{} already exist!".format(output_file))
+        return
+
+    with open(output_file, 'wb') as f:
         pickle.dump(token_freq_dict, f)
         pickle.dump(path_freq_dict, f)
         pickle.dump(target_freq_dict, f)
@@ -31,10 +48,98 @@ def save_dictionaries(destination_dir, dataset_name, hash_to_string_dict, token_
     #     for hashed_path, context_path in hash_to_string_dict.items():
     #         f.write(hashed_path + '\t' + context_path + '\n')
 
-    print('Dictionaries saved to: {}'.format(os.path.join(destination_dir, output_file_name)))
+    print('Dictionaries saved to: {}'.format(output_file))
 
-def create_output_files_code2vec(filepath, destination_dir, dataset_name, data_role, include_paths, max_paths, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict):
-    total_examples = 0      # Total Valid examples
+def split_dataset(output_dir, dataset_name, num_examples):
+    full_shuffled_file = os.path.join(output_dir, '{}.full.shuffled.c2v'.format(dataset_name))
+    train_file = os.path.join(output_dir, '{}.train.c2v'.format(dataset_name))
+    test_file = os.path.join(output_dir, '{}.test.c2v'.format(dataset_name))
+    val_file = os.path.join(output_dir, '{}.val.c2v'.format(dataset_name))
+
+    if os.path.isfile(train_file) and os.path.isfile(test_file) and os.path.isfile(val_file):
+        print("Reusing the existing Train-Test-Val splits to generate dataset ..")
+        return
+
+    train_index = round(num_examples * 0.89)
+    val_index = round(num_examples * 0.035) + train_index
+    test_index = round(num_examples * 0.075) + val_index
+    print("Total number of Train Examples: ", train_index)
+    print("Total number of Val Examples: ", val_index - train_index)
+    print("Total number of Test Examples: ", test_index - val_index)
+    line_count = 0
+    with open(train_file, 'w') as fo0:
+        with open(val_file, 'w') as fo1:
+            with open(test_file, 'w') as fo2:
+                with open(full_shuffled_file, 'r', encoding="utf-8") as fin:
+                    for line in fin:
+                        line_count += 1
+                        if line_count <= train_index:
+                            fo0.write(line)
+                        elif line_count > train_index and line_count <= val_index:
+                            fo1.write(line)
+                        elif line_count > val_index and line_count <= test_index:
+                            fo2.write(line)
+
+def filter_paths(input_file, output_file, include_paths, max_path_count):
+    if os.path.isfile(output_file):
+        print("{} already exists!".format(output_file))
+        return
+
+    total_valid_examples = 0
+    first_example = True
+    with open(output_file, 'a', encoding="utf-8") as fout:
+        with open(input_file, 'r', encoding="utf-8") as fin:
+            for line in fin:
+                fields = line.strip('\n').split(' ')
+                label = fields[0]
+                ast_paths = fields[1 : (max_path_count['ast'] + 1)]
+                cfg_paths = fields[(max_path_count['ast'] + 1) : (max_path_count['ast'] + max_path_count['cfg'] + 1)]
+                cdg_paths = fields[(max_path_count['ast'] + max_path_count['cfg'] + 1) : (max_path_count['ast'] + max_path_count['cfg'] + max_path_count['cdg'] + 1)]
+                ddg_paths = fields[(max_path_count['ast'] + max_path_count['cfg'] + max_path_count['cdg'] + 1) : (max_path_count['ast'] + max_path_count['cfg'] + max_path_count['cdg'] + max_path_count['ddg'] + 1)]
+
+                valid_example = True
+                output = label
+                if include_paths['ast'] and valid_example:
+                    if ast_paths[0] == '':
+                        valid_example = False
+
+                    output += (' ' + ' '.join(ast_paths))
+
+                if include_paths['cfg'] and valid_example:
+                    if cfg_paths[0] == '':
+                        valid_example = False
+
+                    output += (' ' + ' '.join(cfg_paths))
+
+                if include_paths['cdg'] and valid_example:
+                    if cdg_paths[0] == '':
+                        valid_example = False
+
+                    output += (' ' + ' '.join(cdg_paths))
+
+                if include_paths['ddg'] and valid_example:
+                    if ddg_paths[0] == '':
+                        valid_example = False
+
+                    output += (' ' + ' '.join(ddg_paths))
+
+                if valid_example:    
+                    if first_example:
+                        fout.write(output)
+                        first_example = False
+                    else:
+                        fout.write('\n' + output)
+
+                    total_valid_examples += 1
+            
+    print("Number of Valid Examples in {file}: {count}".format(file=output_file, count=total_valid_examples))
+ 
+def convert_to_model_input_format(input_file, output_file, max_paths, not_include_methods, hash_to_string_dict):
+    if os.path.isfile(output_file):
+        print("{} already exists!".format(output_file))
+        return sum(1 for line in open(output_file, 'r', encoding='utf-8') if line.strip() != '')
+
+    total_valid_examples = 0      # Total valid examples (valid --> example with valid non-empty label)
     empty_examples = 0
     startToken = ''
     path = ''
@@ -48,34 +153,26 @@ def create_output_files_code2vec(filepath, destination_dir, dataset_name, data_r
     current_path_count = {'ast':0, 'cfg':0, 'cdg':0, 'ddg':0}
     current_counter = 'ast'
     
-    os.makedirs(destination_dir, exist_ok=True)
-    with open(os.path.join(destination_dir, "{}.{}.c2v".format(dataset_name, data_role)), 'a', encoding="utf-8") as fout:
-        with open(filepath, 'r', encoding="utf-8") as f:
+    with open(output_file, 'a', encoding="utf-8") as fout:
+        with open(input_file, 'r', encoding="utf-8") as f:
             for line in f:
                 if line.startswith("label:"):
-                    if current_counter == 'ddg':
-                        if include_paths['ddg']:
-                            current_row += (' ' * (max_paths['ddg'] - current_path_count['ddg'] - 1))
-
-                            if current_path_count['ddg'] > 0:
-                                fout.write(current_row)
-                                total_examples += 1
-              
-                            total_path_count['ddg'] += current_path_count['ddg']
-                            current_path_count[current_counter] = 0
-                        else:
-                            fout.write(current_row)                    
-                            total_examples += 1
+                    if current_counter == 'ddg' and valid_example:
+                        current_row += (' ' * (max_paths['ddg'] - current_path_count['ddg'] - 1))
+                        fout.write(current_row)
+                        total_valid_examples += 1
+        
+                        total_path_count['ddg'] += current_path_count['ddg']
+                        current_path_count['ddg'] = 0
 
                     current_row = ''
                     label = line[6:].strip('\n\t ')
-                    if not label:
+                    if (not label) or (label in not_include_methods):
                         valid_example = False
                         empty_examples += 1
                         continue
                     else:
                         valid_example = True
-                        update_freq_dict(target_freq_dict, label)
                         if first_example:
                             current_row += (label + ' ')
                             first_example = False
@@ -89,27 +186,20 @@ def create_output_files_code2vec(filepath, destination_dir, dataset_name, data_r
                     current_counter = 'ast'
 
                 elif (line.startswith("path: cfg") or line.startswith("path: cdg") or line.startswith("path: ddg")) and valid_example:
-                    if include_paths[current_counter]:
-                        if current_path_count[current_counter] == 0:
-                            valid_example = False
-                            empty_examples += 1
-                            current_row = ''
-                            continue
-
-                        current_row += (' ' * (max_paths[current_counter] - current_path_count[current_counter] - 1))
-                        total_path_count[current_counter] += current_path_count[current_counter]
-
+                    current_row += (' ' * (max_paths[current_counter] - current_path_count[current_counter] - 1))
+                    total_path_count[current_counter] += current_path_count[current_counter]
                     current_path_count[current_counter] = 0
+
                     current_counter = line.lstrip('path: \n\t').rstrip(' \n\t')
-                    if include_paths[current_counter]:
-                        current_row += ' '      # \t or ' '
+                    current_row += ' '      # \t or ' '
 
                 else:
-                    if (not valid_example) or (not include_paths[current_counter]) or (current_path_count[current_counter] >= max_paths[current_counter]):
+                    if (not valid_example) or (current_path_count[current_counter] >= max_paths[current_counter]):
                         continue
 
                     pathContext = line.split('\t')
 
+                    # Special Case.
                     if len(pathContext) == 2:
                         if flag == 0:
                             startToken = pathContext[0].strip()
@@ -133,33 +223,31 @@ def create_output_files_code2vec(filepath, destination_dir, dataset_name, data_r
                     
                     if (not startToken) or (not path) or (not endToken):
                         continue
-                    current_path_count[current_counter] += 1
+
                     hashed_path = str(java_string_hashcode(path))
+                    hash_to_string_dict[hashed_path] = path
                     current_row += (startToken + ',' + hashed_path + ',' + endToken)
+                    current_path_count[current_counter] += 1
+
                     if current_path_count[current_counter] < max_paths[current_counter]:
                         current_row += ' '
-                    hash_to_string_dict[hashed_path] = path
-                    update_freq_dict(token_freq_dict, startToken)
-                    update_freq_dict(path_freq_dict, hashed_path)
-                    update_freq_dict(token_freq_dict, endToken)
 
         if valid_example:
-            if include_paths[current_counter]:
-                current_row += (' ' * (max_paths[current_counter] - current_path_count[current_counter] - 1))
-                total_path_count[current_counter] += current_path_count[current_counter]
-                current_path_count[current_counter] = 0
+            current_row += (' ' * (max_paths[current_counter] - current_path_count[current_counter] - 1))
+            total_path_count[current_counter] += current_path_count[current_counter]
+            current_path_count[current_counter] = 0
 
             fout.write(current_row + '\n')
-            total_examples += 1
+            total_valid_examples += 1
 
-    print('File: ' + filepath)
-    print('Valid examples: ' + str(total_examples))
-    print('Invalid examples: ' + str(empty_examples))
+    print('File: ' + input_file)
+    print('Valid examples: ' + str(total_valid_examples))
+    print('Empty/Bad Label examples: ' + str(empty_examples))
     print('Average Path Count: ')
     for rep, count in total_path_count.items():
-        print(rep, count/total_examples)
-    return total_examples
-
+        print(rep, count/total_valid_examples)
+    
+    return total_valid_examples
 
 if __name__ == '__main__':
     hash_to_string_dict = {}
@@ -177,6 +265,8 @@ if __name__ == '__main__':
     datasets = [dataset.strip() for dataset in datasets.split(',')]
     output_dir = config['outputFormatter']['outputDirectory']
     dataset_name_ext = config['outputFormatter']['datasetNameExtension']
+    not_include_methods = config['outputFormatter']['notIncludeMethods']
+    not_include_methods = [method.strip() for method in not_include_methods.split(',')]
 
     include_paths['ast'] = config['outputFormatter'].getboolean('includeASTPaths')
     include_paths['cfg'] = config['outputFormatter'].getboolean('includeCFGPaths')
@@ -188,52 +278,34 @@ if __name__ == '__main__':
     max_path_count['cdg'] = config['outputFormatter'].getint('maxCDGPaths')
     max_path_count['ddg'] = config['outputFormatter'].getint('maxDDGPaths')
 
-    ## For normal Train-Test-Val split. (Target dict is formed using only training, path and token dicts are formed using all splits)
+    ## For normal Train-Test-Val split.
     for dataset_name in datasets:
-        num_training_examples = 0
         destination_dir = os.path.join(output_dir, dataset_name, dataset_name_ext)
         data_path = os.path.join(input_dir, dataset_name + ".c2v")
+        os.makedirs(destination_dir, exist_ok=True)
 
-        num_examples = create_output_files_code2vec(data_path, destination_dir, dataset_name, 'full', \
-                            include_paths, max_path_count, \
-                            hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict)
-        
-        num_training_examples = round(num_examples * 0.89)
-        print("num_training_examples: ", num_training_examples)
+        ## Convert the input data file into model input format. Takes only "max_path_count" number of paths for each type. Removes the "not_include_methods" methods.
+        num_examples = convert_to_model_input_format(data_path, os.path.join(output_dir, dataset_name, "{}.c2v".format(dataset_name + '.full')), max_path_count, not_include_methods, hash_to_string_dict)
 
         ## Shuffle the output file of above step.
-        os.system('./terashuf < {destination_dir}/{dataset_name}.full.c2v > {destination_dir}/{dataset_name}.full.shuffled.c2v'.format(destination_dir=destination_dir, dataset_name=dataset_name))
+        if os.path.isfile(os.path.join(output_dir, dataset_name, '{}.full.shuffled.c2v'.format(dataset_name))):
+            print("{} already exists!".format(os.path.join(output_dir, dataset_name, '{}.full.shuffled.c2v'.format(dataset_name))))
+        else:
+            os.system('./terashuf < {output_dir}/{dataset_name}/{dataset_name}.full.c2v > {output_dir}/{dataset_name}/{dataset_name}.full.shuffled.c2v'.format(output_dir=output_dir, dataset_name=dataset_name))
 
         ## Splitting the joined and shuffled file into Train-Test-Val sets.
-        train_index = round(num_examples * 0.89)
-        val_index = round(num_examples * 0.035) + train_index
-        test_index = round(num_examples * 0.075) + val_index
-        print("Train Examples: ", train_index)
-        print("Val Examples: ", val_index - train_index)
-        print("Test Examples: ", test_index - val_index)
-        line_count = 0
-        with open(os.path.join(destination_dir, '{}.train.c2v'.format(dataset_name + '_' + dataset_name_ext)), 'w') as fo0:
-            with open(os.path.join(destination_dir, '{}.val.c2v'.format(dataset_name + '_' + dataset_name_ext)), 'w') as fo1:
-                with open(os.path.join(destination_dir, '{}.test.c2v'.format(dataset_name + '_' + dataset_name_ext)), 'w') as fo2:
-                    with open(os.path.join(destination_dir, '{}.full.shuffled.c2v'.format(dataset_name)), 'r', encoding="utf-8") as fin:
-                        for line in fin:
-                            line_count += 1
-                            if line_count <= train_index:
-                                fo0.write(line)
-                            elif line_count > train_index and line_count <= val_index:
-                                fo1.write(line)
-                            elif line_count > val_index and line_count <= test_index:
-                                fo2.write(line)
+        split_dataset(os.path.join(output_dir, dataset_name), dataset_name, num_examples)
 
-        # # Creating target dictionary using only Training data.
-        # with open(os.path.join('processedDataset', dataset_name, dataset_name_ext, '{}.train.c2v'.format(dataset_name + dataset_name_ext)), 'r') as file:
-        #     for line in file:
-        #         parts = line.rstrip('\n').split(' ')
-        #         target_name = parts[0]
-        #         contexts = parts[1:]
+        ## Use "include_paths" to select specific type of paths.
+        filter_paths(os.path.join(output_dir, dataset_name, '{}.train.c2v'.format(dataset_name)), os.path.join(destination_dir, '{}.train.c2v'.format(dataset_name + '_' + dataset_name_ext)), include_paths, max_path_count)
+        filter_paths(os.path.join(output_dir, dataset_name, '{}.test.c2v'.format(dataset_name)), os.path.join(destination_dir, '{}.test.c2v'.format(dataset_name + '_' + dataset_name_ext)), include_paths, max_path_count)
+        filter_paths(os.path.join(output_dir, dataset_name, '{}.val.c2v'.format(dataset_name)), os.path.join(destination_dir, '{}.val.c2v'.format(dataset_name + '_' + dataset_name_ext)), include_paths, max_path_count)
 
-        #         update_freq_dict(target_freq_dict, target_name)
+        ## Create dictionaries using training data.
+        create_dictionaries(os.path.join(destination_dir, '{}.train.c2v'.format(dataset_name + '_' + dataset_name_ext)), token_freq_dict, path_freq_dict, target_freq_dict)
 
-        save_dictionaries(destination_dir, dataset_name + '_' + dataset_name_ext, hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, num_training_examples)
-        os.remove(os.path.join(destination_dir, dataset_name + '.full.c2v'))
-        os.remove(os.path.join(destination_dir, dataset_name + '.full.shuffled.c2v'))
+        ## Save the dictionary file.
+        save_dictionaries(os.path.join(destination_dir, '{}.dict.c2v'.format(dataset_name + '_' + dataset_name_ext)), hash_to_string_dict, token_freq_dict, path_freq_dict, target_freq_dict, round(num_examples * 0.89))
+
+        # os.remove(os.path.join(output_dir, dataset_name + '.full.c2v'))
+        # os.remove(os.path.join(output_dir, dataset_name + '.full.shuffled.c2v'))

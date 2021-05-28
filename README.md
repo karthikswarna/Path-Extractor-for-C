@@ -1,9 +1,20 @@
 # <div align="center">**Path Extractor for C**</div>
 
+## **Contents**
+  * [Introduction](#introduction)
+  * [Installing Dependencies](#installing-dependencies)
+  * [Extracting paths from a set of projects](#extracting-paths-from-a-set-of-projects)
+  * [Similar tools that inspired our implementation](#similar-tools-that-inspired-our-implementation)
+  * [Sample Datasets](#sample-datasets)
+  * [Team](#team)
+
+
+
 ## **Introduction**
 * The idea of extracting paths from code to capture properties is inspired by [A general path-based representation for predicting program properties](https://doi.org/10.1145/3296979.3192412). We have extended the path-based representation to include CFG and PDG paths.
 
 * This tool is developed as part of my and [Dheeraj's](https://github.com/dheerajrox) bachelor thesis.
+
 
 
 ## **Installing Dependencies**
@@ -87,7 +98,7 @@ python3 pathExtractor/main.py
 ```
 
 
-**STEP-3:** Use the ```output_formatter.py``` script to convert the dataset into code2vec's input format, and split it into train-test-val sets.
+**STEP-3:** Use the ```output_formatter.py``` script to convert the dataset into the [model](https://github.com/karthikswarna/Extended-code2vec-model) input format, and split it into train-test-val sets.
 
 * Set the following parameters in ```config.ini```:
 
@@ -97,6 +108,7 @@ inputDirectory           | -             | Path to the directory that contains d
 datasets                 | -             | Comma-separated list of names of the dataset files to be read from the inputDirectory.
 outputDirectory          | -             | Path to the destination directory where the output datasets will be saved.
 datasetNameExtension     | -             | An additional extension to the dataset name (Used to distinguish between different datasets.)
+notIncludeMethods        | -             | Comma-separated list of method names that should not be included in the dataset. For example, some method names like 'f' may not actually represent the method's meaning, and hence we can remove such methods from the dataset.
 includeASTPaths          | False         | This flag specifies whether to include AST paths in the output dataset.
 includeCFGPaths          | False         | This flag specifies whether to include CFG paths in the output dataset.
 includeCDGPaths          | False         | This flag specifies whether to include CDG paths in the output dataset.
@@ -111,9 +123,18 @@ maxDDGPaths              | 0             | Maximum number of DDG paths to be inc
 python3 output_formatter.py
 ```
 
+
+
 ## **Similar tools that inspired our implementation**
 1. [astminer](https://github.com/JetBrains-Research/astminer)
 2. [code2vec's Java extractor](https://github.com/tech-srl/code2vec/tree/master/JavaExtractor)
+
+
+
+## **Sample Datasets**
+Datasets we have created for our project can be found [here](https://drive.google.com/file/d/1CmQSOVvoR8zObc-Rbh8Un5d3dNFvCfbF/view?usp=sharing)
+
+
 
 ## **Team**
 In case of any queries or if you would like to give any suggestions, please feel free to contact:
