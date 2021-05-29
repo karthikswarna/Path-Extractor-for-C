@@ -1,0 +1,5 @@
+pydot==1.4.2
+networkx==2.5.1
+multiprocess==0.70.11.1
+filelock==3.0.12
+configparser==5.0.2

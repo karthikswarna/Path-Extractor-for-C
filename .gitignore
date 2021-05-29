@@ -3,7 +3,6 @@ __pycache__
 Dataset
 processedDataset*
 *.c
-*.txt
 *.ipynb
 *.json
 *.c2v
