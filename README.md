@@ -5,7 +5,7 @@
   * [Installing Dependencies](#installing-dependencies)
   * [Extracting paths from a set of projects](#extracting-paths-from-a-set-of-projects)
   * [Similar tools that inspired our implementation](#similar-tools-that-inspired-our-implementation)
-  * [Sample Datasets](#sample-datasets)
+  * [Datasets](#datasets)
   * [Team](#team)
 
 
@@ -66,7 +66,8 @@ Both the ```projectPreprocessor``` and ```pathExtractor``` modules and ```output
 
 * Run the ```projectPreprocessor/main.py``` script to extract the methods.
 ```
-python3 projectPreprocessor/main.py
+cd projectPreprocessor
+python3 main.py
 ```
 
 
@@ -94,7 +95,8 @@ useCheckpoint            | -             | This flag specifies whether to use th
 
 * Run the ```pathExtractor/main.py``` script to extract the paths from methods.
 ```
-python3 pathExtractor/main.py
+cd pathExtractor
+python3 main.py
 ```
 
 
@@ -131,7 +133,7 @@ python3 output_formatter.py
 
 
 
-## **Sample Datasets**
+## **Datasets**
 The datasets we have created for our project can be found [here](https://drive.google.com/file/d/1CmQSOVvoR8zObc-Rbh8Un5d3dNFvCfbF/view?usp=sharing).
 
 
